@@ -7,7 +7,6 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "build": "node -e \"console.log('AscendOS server build ready')\"",
     "seed": "node src/scripts/seed.js",
     "test": "vitest run"
   },
