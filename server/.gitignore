@@ -1,0 +1,14 @@
+# Environment configuration
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+
+# Local database storage
+data/
+
+# Logs
+*.log
+npm-debug.log*
