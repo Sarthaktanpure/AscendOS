@@ -4,6 +4,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const mongoSanitize = require('express-mongo-sanitize');
+const path = require('path');
+const fs = require('fs');
 
 // Load environment variables
 dotenv.config();
@@ -35,13 +37,20 @@ const app = express();
 
 // Security Middlewares
 app.use(helmet({
-  crossOriginResourcePolicy: false
+  crossOriginResourcePolicy: false,
+  contentSecurityPolicy: false
 }));
 
 // CORS Configuration
 const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
 app.use(cors({
-  origin: [clientUrl, 'http://localhost:5173', 'http://127.0.0.1:5173'],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, or same-origin)
+    if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1') || origin.includes('onrender.com') || origin === clientUrl) {
+      return callback(null, true);
+    }
+    return callback(null, true); // Permissive for production deployment
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
@@ -84,6 +93,57 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/mentor', mentorRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/resources', resourceRoutes);
+
+// Serve static frontend assets (monorepo client/dist or standalone server/public)
+const clientDistPath = path.join(__dirname, '../../client/dist');
+const serverPublicPath = path.join(__dirname, '../public');
+
+let staticPath = null;
+if (fs.existsSync(serverPublicPath) && fs.existsSync(path.join(serverPublicPath, 'index.html'))) {
+  staticPath = serverPublicPath;
+} else if (fs.existsSync(clientDistPath) && fs.existsSync(path.join(clientDistPath, 'index.html'))) {
+  staticPath = clientDistPath;
+}
+
+if (staticPath) {
+  console.log(`[AscendOS] Serving production frontend build from: ${staticPath}`);
+  app.use(express.static(staticPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(staticPath, 'index.html'));
+  });
+} else {
+  // If no frontend build found, provide a clean status landing page instead of raw 404
+  app.get('/', (req, res) => {
+    res.status(200).send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>AscendOS API</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0B0F17; color: #F3F4F6; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+          .card { background: #111827; border: 1px solid #233044; border-radius: 16px; padding: 36px; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); }
+          h1 { color: #818CF8; margin: 0 0 12px; font-size: 24px; }
+          p { color: #9CA3AF; font-size: 14px; line-height: 1.6; }
+          .badge { display: inline-block; background: #10B98120; color: #10B981; border: 1px solid #10B98140; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+          a { color: #6366F1; text-decoration: none; font-weight: 600; }
+          a:hover { text-decoration: underline; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="badge">API Service Online</div>
+          <h1>AscendOS Server</h1>
+          <p>The backend API is operational. Visit <a href="/api/health">/api/health</a> for system status.</p>
+        </div>
+      </body>
+      </html>
+    `);
+  });
+}
 
 // Centralized error handler
 app.use(errorHandler);
