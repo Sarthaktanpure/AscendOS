@@ -8,8 +8,8 @@ export const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const [email, setEmail] = useState('sarthak.tanpure@pravara.edu');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('sarthaktanpure256@gmail.com');
+  const [password, setPassword] = useState('Sarthak@9260');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 

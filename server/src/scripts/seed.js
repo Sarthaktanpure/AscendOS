@@ -23,7 +23,7 @@ async function seedDatabase() {
     console.log('[Seed] Connected to database:', mongoose.connection.name);
 
     // 1. Create or update Sarthak Tanpure's profile
-    const userEmail = 'sarthak.tanpure@pravara.edu';
+    const userEmail = 'sarthaktanpure256@gmail.com';
     let user = await User.findOne({ email: userEmail });
 
     if (!user) {
@@ -31,7 +31,7 @@ async function seedDatabase() {
       user = await User.create({
         name: 'Sarthak Tanpure',
         email: userEmail,
-        password: 'password123', // Will be hashed automatically by pre-save hook
+        password: 'Sarthak@9260', // Will be hashed automatically by pre-save hook
         degree: 'B.E. Information Technology',
         college: 'Pravara Rural Engineering College, Loni',
         expectedGraduation: 2028,
